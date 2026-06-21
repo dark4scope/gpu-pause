@@ -196,4 +196,3 @@ MIT — see [LICENSE](LICENSE)
 ## Links
 
 - Chinese README: [README.md](README.md)
-- Gitee mirror: https://gitee.com/dark4scope/gpu-pause

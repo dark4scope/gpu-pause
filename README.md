@@ -216,5 +216,4 @@ MIT — 见 [LICENSE](LICENSE)
 ## 相关链接
 
 - 英文 README: [README.en.md](README.en.md)
-- Gitee 镜像: https://gitee.com/dark4scope/gpu-pause
 - 详细 learning(开发背景 + 实测 KPI 表)在 `examples/` 目录
