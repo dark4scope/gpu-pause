@@ -77,7 +77,7 @@ bash gpu-pause.sh undump /tmp/gpu-pause-dumps/pid-12345-20260621-2230
 ### DISK mode
 - ✅ GPU + RAM 都释放,机器可重启(但 CRIU dump 绑定 mount points / namespaces,同机同 env)
 - ✅ 已实测 single-threaded Python+PyTorch byte-exact
-- ❌ **SFTTrainer + DL_WORKERS > 0 实测 fail**(2026-06-21):PyTorch DataLoader 子进程 `pt_data_worker` 持有 CUDA mapping `0x200200000`,CRIU `cuda_plugin` 不能 dump non-regular mapping → `Dumping FAILED`
+- ❌ **SFTTrainer + DL_WORKERS > 0 实测 fail**(2026-06-21):PyTorch DataLoader **子进程** `pt_data_worker` 持有 CUDA mapping `0x200200000`,CRIU `cuda_plugin` 不能 dump non-regular mapping → `Dumping FAILED`
 - ⚠️ Workaround:`DataLoader(num_workers=0)` 单进程模式可用(慢 ~30% 但 dump 兼容)
 - ❌ Dump 大小 = 进程 RAM + GPU mem(9B 模型 ~40-50 GB)
 - ❌ 需要 sudo(criu)

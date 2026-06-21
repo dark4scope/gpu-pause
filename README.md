@@ -182,8 +182,9 @@ $ gpu-pause undump /tmp/gpu-pause-dumps/pid-12345-20260621-2230
 
 - ✅ 已实测 single-threaded Python+PyTorch byte-exact
 - ✅ GPU + RAM 都释放,机器可重启(同机同 mount/namespace 内)
-- ❌ **SFTTrainer + DL_WORKERS > 0 实测 fail**(2026-06-21):PyTorch DataLoader **子进程**(`pt_data_worker`)持有 CUDA mapping(`0x200200000` device memory range),CRIU 的 `cuda_plugin` 不能 dump non-regular mapping → `Dumping FAILED`
-- ⚠️ Workaround:把 `DataLoader(num_workers=0)`(单进程,无子进程)再试 — 牺牲 ~30% 数据加载速度换 dump 兼容
+- ❌ **DataLoader(num_workers > 0) 实测 fail**(2026-06-21):PyTorch DataLoader **子进程**(`pt_data_worker`)持有 CUDA mapping(`0x200200000` device memory range),CRIU 的 `cuda_plugin` 不能 dump non-regular mapping → `Dumping FAILED`
+- ✅ **DataLoader(num_workers=0) 实测 work**(2026-06-21):单进程 dataloader 无子进程,dump 1.1 GB / 49 files,PID killed,GPU 释放,restore 后 PID reuse + GPU auto-attach + step 连续(475 → 500 → 525...)+ loss 仍稳定
+- ⚠️ Workaround:把 `DataLoader(num_workers=0)` — 牺牲 ~30% 数据加载速度换 dump 兼容
 - ❌ Dump 大小 = 进程 RAM + GPU 显存(9B 模型 ~40-50 GB)
 - ❌ 跨机器 restore 不可靠
 - ❌ 需要 sudo

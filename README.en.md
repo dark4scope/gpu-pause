@@ -162,8 +162,9 @@ Measured timeline (RTX 3090 + driver R595):
 
 - ✅ Verified byte-exact for single-threaded Python + PyTorch
 - ✅ GPU + RAM both freed, machine can reboot (within same mount/namespace)
-- ❌ **Verified FAIL** on `SFTTrainer + DL_WORKERS > 0` (2026-06-21): PyTorch DataLoader **child processes** (`pt_data_worker`) hold CUDA mappings (`0x200200000` device memory range). CRIU's `cuda_plugin` cannot dump non-regular mappings → `Dumping FAILED`
-- ⚠️ Workaround: use `DataLoader(num_workers=0)` (single process, no children) — costs ~30% data loading speed for CRIU compatibility
+- ❌ **Verified FAIL** with `DataLoader(num_workers > 0)` (2026-06-21): PyTorch DataLoader **child processes** (`pt_data_worker`) hold CUDA mappings (`0x200200000` device memory range). CRIU's `cuda_plugin` cannot dump non-regular mappings → `Dumping FAILED`
+- ✅ **Verified WORKING** with `DataLoader(num_workers=0)` (2026-06-21): single-process dataloader has no child procs, dumped 1.1 GB / 49 files, PID killed, GPU released, restore reused same PID + GPU auto-attached + steps continued (475 → 500 → 525...) + loss stable
+- ⚠️ Workaround: use `DataLoader(num_workers=0)` — costs ~30% data loading speed for CRIU compatibility
 - ❌ Dump size = process RAM + GPU mem (9B ≈ 40-50 GB)
 - ❌ Cross-machine restore unreliable
 - ❌ Requires sudo
