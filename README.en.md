@@ -154,15 +154,16 @@ Measured timeline (RTX 3090 + driver R595):
 ### RAM mode
 
 - ✅ Verified byte-exact (single-threaded PyTorch + Linear + AdamW)
+- ✅ **Verified working** with `SFTTrainer` + unsloth + flash-attn + DL_WORKERS=4 + grad_ckpt (2026-06-21 on Qwen3.5-0.8B SFT; GPU 4438 MiB → 4 MiB, training resumed seamlessly step 86 → 117)
 - ❌ Process RAM = original RAM + GPU mem (9B SFT needs +36 GB RAM)
 - ❌ Long sleep (hours+) may trigger kernel reaper / heartbeat issues
-- ⚠️ **Not verified**: `SFTTrainer` + 8-12 dataloader workers + flash-attn + `torch.compile` — smoke-test first
 
 ### DISK mode
 
 - ✅ Verified byte-exact for single-threaded Python + PyTorch
 - ✅ GPU + RAM both freed, machine can reboot (within same mount/namespace)
-- ❌ **Not verified** with multi-threaded Python — CRIU is fragile with multi-threading + open files + TCP sockets
+- ❌ **Verified FAIL** on `SFTTrainer + DL_WORKERS > 0` (2026-06-21): PyTorch DataLoader **child processes** (`pt_data_worker`) hold CUDA mappings (`0x200200000` device memory range). CRIU's `cuda_plugin` cannot dump non-regular mappings → `Dumping FAILED`
+- ⚠️ Workaround: use `DataLoader(num_workers=0)` (single process, no children) — costs ~30% data loading speed for CRIU compatibility
 - ❌ Dump size = process RAM + GPU mem (9B ≈ 40-50 GB)
 - ❌ Cross-machine restore unreliable
 - ❌ Requires sudo

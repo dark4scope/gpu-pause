@@ -70,14 +70,15 @@ bash gpu-pause.sh undump /tmp/gpu-pause-dumps/pid-12345-20260621-2230
 
 ### RAM mode
 - ✅ 已实测**字节级无损**(model param hash + optimizer state hash + forward output 完全一致)
+- ✅ **SFTTrainer + unsloth + flash-attn + DL_WORKERS=4 + grad_ckpt 实测 work**(2026-06-21,0.8B Qwen3.5 SFT,GPU 4438→4 MiB,restore 后无缝继续)
 - ❌ 进程 RAM = 原 RAM + GPU mem swap(本机 62 GB RAM 跑 9B 训练 + freeze 紧张)
 - ❌ 长 sleep(数小时+)可能踩 kernel reaper / heartbeat
-- ⚠️ **没验证**:SFTTrainer + 12 dataloader workers + flash-attn + torch.compile(用前 smoke)
 
 ### DISK mode
 - ✅ GPU + RAM 都释放,机器可重启(但 CRIU dump 绑定 mount points / namespaces,同机同 env)
 - ✅ 已实测 single-threaded Python+PyTorch byte-exact
-- ❌ **没验证**多线程 Python(SFTTrainer 12 dataloader workers + flash-attn — CRIU 对 multi-threaded 出名脆弱)
+- ❌ **SFTTrainer + DL_WORKERS > 0 实测 fail**(2026-06-21):PyTorch DataLoader 子进程 `pt_data_worker` 持有 CUDA mapping `0x200200000`,CRIU `cuda_plugin` 不能 dump non-regular mapping → `Dumping FAILED`
+- ⚠️ Workaround:`DataLoader(num_workers=0)` 单进程模式可用(慢 ~30% 但 dump 兼容)
 - ❌ Dump 大小 = 进程 RAM + GPU mem(9B 模型 ~40-50 GB)
 - ❌ 需要 sudo(criu)
 - ❌ 跨机 restore 不可靠
